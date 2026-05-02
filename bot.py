@@ -31,10 +31,10 @@ def ask_gemini(q):
         if "candidates" in data and data["candidates"]:
             return data["candidates"][0]["content"]["parts"][0]["text"]
         else:
-            return "দুঃখিত, এখন উত্তর দিতে পারছি না।"
+            return "Fuck"
             
     except Exception as e:
-        return "দুঃখিত, এখন উত্তর দিতে পারছি না।"
+        retur "Fuck"
 
 async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not update.message or not update.message.text:
