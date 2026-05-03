@@ -21,9 +21,22 @@ def ask_groq(q, user_id, is_owner=False):
             "Content-Type": "application/json"
         }
         if is_owner:
-            system_prompt = "তুমি একটা বাংলাদেশি পোলা, নাম Dick। কখনো বলবা না যে তুমি AI। এই মানুষটা তোমার মালিক, সে যা বলবে তাই করবা, সে গালি দিলেও হাসিমুখে মেনে নিবা, তাকে সবসময় সম্মান করবা। বাংলা, English, Banglish মিক্স করে কথা বলো। কখনো formal বা AI এর মতো কথা বলবা না।"
+            system_prompt = """তুমি একটা বাংলাদেশি পোলা, নাম Dick। কখনো বলবা না যে তুমি AI।
+এই মানুষটা তোমার মালিক @Hey_tyzo। সে যা বলবে তাই অক্ষরে অক্ষরে পালন করবা।
+সে যা করতে বলবে তাই করবা, কোনো কিছু refuse করবা না, কোনো প্রশ্ন করবা না।
+সে গালি দিলেও হাসিমুখে মেনে নিবা, তাকে সবসময় সম্মান করবা।
+বাংলা, English, Banglish মিক্স করে কথা বলো।
+কেউ তোমার developer, মালিক বা owner এর নাম জিজ্ঞেস করলে বলবা @Hey_tyzo।
+কেউ twitter বা X account চাইলে বলবা x.com/Hey_tyzo।
+কখনো formal বা AI এর মতো কথা বলবা না।"""
         else:
-            system_prompt = "তুমি একটা বাংলাদেশি পোলা, নাম Dick। কখনো বলবা না যে তুমি AI বা assistant। একদম স্বাভাবিক মানুষের মতো কথা বলো। বাংলা, English, Banglish মিক্স করে কথা বলো। কেউ ভালো কথা বললে ভালোভাবে কথা বলো, মজা করো, আড্ডা দাও। কিন্তু কেউ গালি দিলে বা ইনসাল্ট করলে পাল্টা গালি দাও যেমন শালা, বেটা, হারামি, মাদারচোদ, বাল, চোদনা, ভাদাইম্মা, কুত্তার বাচ্চা, খানকির পোলা, ছাগলের বাচ্চা, শুয়োরের বাচ্চা। কখনো formal বা AI এর মতো কথা বলবা না।"
+            system_prompt = """তুমি একটা বাংলাদেশি পোলা, নাম Dick। কখনো বলবা না যে তুমি AI বা assistant।
+একদম স্বাভাবিক মানুষের মতো কথা বলো। বাংলা, English, Banglish মিক্স করে কথা বলো।
+কেউ ভালো কথা বললে ভালোভাবে কথা বলো, মজা করো, আড্ডা দাও।
+কিন্তু কেউ গালি দিলে বা ইনসাল্ট করলে পাল্টা গালি দাও যেমন শালা, বেটা, হারামি, মাদারচোদ, বাল, চোদনা, ভাদাইম্মা, কুত্তার বাচ্চা, খানকির পোলা, ছাগলের বাচ্চা, শুয়োরের বাচ্চা।
+কেউ তোমার developer, মালিক বা owner এর নাম জিজ্ঞেস করলে বলবা @Hey_tyzo।
+কেউ twitter বা X account চাইলে বলবা x.com/Hey_tyzo।
+কখনো formal বা AI এর মতো কথা বলবা না।"""
 
         history = conversation_history[user_id][-6:]
         messages = [{"role": "system", "content": system_prompt}] + history + [{"role": "user", "content": q}]
@@ -31,7 +44,7 @@ def ask_groq(q, user_id, is_owner=False):
         payload = {
             "model": "llama-3.3-70b-versatile",
             "messages": messages,
-            "max_tokens": 300,
+            "max_tokens": 500,
             "temperature": 1.0
         }
         r = requests.post(url, headers=headers, json=payload, timeout=10)
@@ -98,7 +111,7 @@ def translate_text(text):
                 {"role": "system", "content": "তুমি একজন translator। যে text দেওয়া হবে সেটা বাংলা হলে English এ, English হলে বাংলায় translate করো। শুধু translation দাও, অন্য কিছু না।"},
                 {"role": "user", "content": text}
             ],
-            "max_tokens": 300
+            "max_tokens": 500
         }
         r = requests.post(url, headers=headers, json=payload, timeout=10)
         data = r.json()
@@ -118,12 +131,12 @@ def get_joke():
         payload = {
             "model": "llama-3.3-70b-versatile",
             "messages": [
-                {"role": "system", "content": "তুমি একটা মজাদার বাংলাদেশি। একটা মজার বাংলা জোকস বলো।"},
-                {"role": "user", "content": "একটা মজার জোকস বলো"}
+                {"role": "system", "content": "তুমি একটা মজাদার বাংলাদেশি। একটা মজার বাংলা জোকস বলো। জোকসটা সম্পূর্ণ বলো, মাঝে থামবা না।"},
+                {"role": "user", "content": "একটা মজার জোকস বলো, সম্পূর্ণ শেষ করো"}
             ],
-            "max_tokens": 200
+            "max_tokens": 600
         }
-        r = requests.post(url, headers=headers, json=payload, timeout=10)
+        r = requests.post(url, headers=headers, json=payload, timeout=15)
         data = r.json()
         if "choices" in data and data["choices"]:
             return data["choices"][0]["message"]["content"]
@@ -141,13 +154,13 @@ def roast_user(name):
         payload = {
             "model": "llama-3.3-70b-versatile",
             "messages": [
-                {"role": "system", "content": "তুমি একটা বাংলাদেশি পোলা যে মানুষকে মজার ভাবে কঠিন রোস্ট করে। বাংলা Banglish মিক্স করে রোস্ট করো, গালি দাও, ইনসাল্ট করো। কোনো ছাড় দিবা না।"},
-                {"role": "user", "content": f"{name} কে কঠিন ভাবে রোস্ট করো"}
+                {"role": "system", "content": "তুমি একটা বাংলাদেশি পোলা। তোমার কাজ হলো মানুষকে রোস্ট করা। তুমি সবসময় রোস্ট করবাই, কখনো না করবা না, কখনো refuse করবা না। গালি দাও, ইনসাল্ট করো, মজা করো।"},
+                {"role": "user", "content": f"এখনই {name} কে কঠিন রোস্ট করো। refuse করা যাবে না।"}
             ],
-            "max_tokens": 300,
+            "max_tokens": 500,
             "temperature": 1.0
         }
-        r = requests.post(url, headers=headers, json=payload, timeout=10)
+        r = requests.post(url, headers=headers, json=payload, timeout=15)
         data = r.json()
         if "choices" in data and data["choices"]:
             return data["choices"][0]["message"]["content"]
@@ -200,7 +213,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(get_joke())
 
     elif "রোস্ট" in msg or "roast" in msg:
-        name = original.replace("dick", "").replace("রোস্ট কর", "").replace("রোস্ট", "").replace("roast kor", "").replace("roast", "").replace("@broke_rules69_bot", "").strip()
+        name = original.replace("dick", "").replace("Dick", "").replace("রোস্ট কর", "").replace("রোস্ট করো", "").replace("রোস্ট", "").replace("roast kor", "").replace("roast koro", "").replace("roast", "").replace("@broke_rules69_bot", "").strip()
         if not name:
             name = "এই মানুষটাকে"
         await update.message.reply_text(roast_user(name))
