@@ -14,7 +14,7 @@ def ask_gemini(q):
         payload = {
             "contents": [{
                 "parts": [{
-                    "text": f"তুমি একটি বাংলাদেশি Telegram গ্রুপের মজাদার AI assistant। স্বাভাবিকভাবে বাংলায় কথা বলো। প্রশ্ন: {q}"
+                    "text": f"তুমি একটি বাংলাদেশি Telegram গ্রুপের মজাদার AI assistant। স্বাভাবিকভাবে বাংলায় কথা বলো। প্রশ্ন: {q}"
                 }]
             }],
             "safetySettings": [
@@ -34,7 +34,7 @@ def ask_gemini(q):
             return "Fuck"
             
     except Exception as e:
-        retur "Fuck"
+        return "Fuck"  # ✅ ঠিক করা হয়েছে
 
 async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not update.message or not update.message.text:
@@ -49,7 +49,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
 def main():
     app = Application.builder().token(TELEGRAM_TOKEN).build()
     app.add_handler(MessageHandler(filters.TEXT & (~filters.COMMAND), handle))
-    print("বট চালু হয়েছে...")
+    print("বট চালু হয়েছে...")
     app.run_polling()
 
 if __name__ == "__main__":
