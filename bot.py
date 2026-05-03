@@ -68,16 +68,28 @@ def search_image(query):
             "engine": "google_images",
             "q": query,
             "api_key": SERPAPI_KEY,
-            "num": 3,
-            "safe": "off"
+            "num": 10,
+            "safe": "off",
+            "ijn": "0"
         }
-        r = requests.get(url, params=params, timeout=10)
+        r = requests.get(url, params=params, timeout=15)
         data = r.json()
         if "images_results" in data and data["images_results"]:
-            for item in data["images_results"][:3]:
-                url_img = item.get("original", "")
-                if url_img and url_img.startswith("http"):
-                    return url_img
+            for item in data["images_results"]:
+                img_url = item.get("original", "")
+                width = item.get("original_width", 0)
+                height = item.get("original_height", 0)
+                if (img_url and
+                    img_url.startswith("http") and
+                    not img_url.endswith(".gif") and
+                    width >= 200 and height >= 200):
+                    try:
+                        head = requests.head(img_url, timeout=5, allow_redirects=True)
+                        content_type = head.headers.get("content-type", "")
+                        if "image" in content_type and head.status_code == 200:
+                            return img_url
+                    except Exception:
+                        continue
         return None
     except Exception:
         return None
@@ -150,19 +162,9 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
             try:
                 await update.message.reply_photo(photo=result)
             except Exception:
-                clean = query.replace(" ", "%20")
-                fallback = f"https://image.pollinations.ai/prompt/{clean}?width=512&height=512&nologo=true"
-                try:
-                    await update.message.reply_photo(photo=fallback)
-                except Exception:
-                    await update.message.reply_text("ছবি পাঠাতে পারলাম না শালা!")
+                await update.message.reply_text("ছবি পাঠাতে পারলাম না শালা!")
         else:
-            clean = query.replace(" ", "%20")
-            fallback = f"https://image.pollinations.ai/prompt/{clean}?width=512&height=512&nologo=true"
-            try:
-                await update.message.reply_photo(photo=fallback)
-            except Exception:
-                await update.message.reply_text("ছবি খুঁজে পেলাম না ভাই!")
+            await update.message.reply_text("ছবি খুঁজে পেলাম না ভাই!")
 
     elif "গান" in msg or "song" in msg or "music" in msg:
         query = msg.replace("dick", "").replace("গান দে", "").replace("গান", "").replace("song", "").replace("music", "").replace("@broke_rules69_bot", "").strip()
