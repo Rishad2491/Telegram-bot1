@@ -50,16 +50,18 @@ def search_image(query):
             "q": query,
             "searchType": "image",
             "num": 1,
-            "safe": "off"
+            "safe": "off",
+            "gl": "us",
+            "lr": "lang_en"
         }
         r = requests.get(url, params=params, timeout=10)
         data = r.json()
         if "items" in data and data["items"]:
             return data["items"][0]["link"]
         else:
-            return None
-    except Exception:
-        return None
+            return f"NOT_FOUND: {str(data)}"
+    except Exception as e:
+        return f"ERROR: {str(e)}"
 
 def get_image_query(text):
     text_lower = text.lower()
@@ -80,14 +82,14 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
             query = get_image_query(update.message.text)
             if not query:
                 query = "random"
-            image_url = search_image(query)
-            if image_url:
-                try:
-                    await update.message.reply_photo(photo=image_url)
-                except Exception:
-                    await update.message.reply_text(f"ছবি পাঠাতে পারলাম না শালা!")
+            result = search_image(query)
+            if result.startswith("NOT_FOUND") or result.startswith("ERROR"):
+                await update.message.reply_text(f"সমস্যা: {result}")
             else:
-                await update.message.reply_text("ছবি খুঁজে পেলাম না ভাই!")
+                try:
+                    await update.message.reply_photo(photo=result)
+                except Exception as e:
+                    await update.message.reply_text(f"ছবি পাঠাতে পারলাম না: {str(e)}")
         else:
             ans = ask_groq(update.message.text, is_owner=is_owner)
             try:
