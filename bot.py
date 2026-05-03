@@ -5,8 +5,7 @@ from telegram.ext import Application, MessageHandler, filters, ContextTypes
 
 TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN")
 GROQ_API_KEY = os.environ.get("GROQ_API_KEY")
-GOOGLE_API_KEY = os.environ.get("GOOGLE_API_KEY")
-SEARCH_ENGINE_ID = os.environ.get("SEARCH_ENGINE_ID")
+SERPAPI_KEY = os.environ.get("SERPAPI_KEY")
 TRIGGER_WORDS = ["dick", "@broke_rules69_bot"]
 OWNER_ID = 5346705141
 IMAGE_WORDS = ["ছবি দে", "ছবি দাও", "image of", "picture of", "photo of", "draw", "আঁক", "ছবি"]
@@ -43,21 +42,18 @@ def ask_groq(q, is_owner=False):
 
 def search_image(query):
     try:
-        url = "https://www.googleapis.com/customsearch/v1"
+        url = "https://serpapi.com/search"
         params = {
-            "key": GOOGLE_API_KEY,
-            "cx": SEARCH_ENGINE_ID,
+            "engine": "google_images",
             "q": query,
-            "searchType": "image",
+            "api_key": SERPAPI_KEY,
             "num": 1,
-            "safe": "off",
-            "gl": "us",
-            "lr": "lang_en"
+            "safe": "off"
         }
         r = requests.get(url, params=params, timeout=10)
         data = r.json()
-        if "items" in data and data["items"]:
-            return data["items"][0]["link"]
+        if "images_results" in data and data["images_results"]:
+            return data["images_results"][0]["original"]
         else:
             return f"NOT_FOUND: {str(data)}"
     except Exception as e:
