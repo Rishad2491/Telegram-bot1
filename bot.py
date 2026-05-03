@@ -5,9 +5,11 @@ from telegram.ext import Application, MessageHandler, filters, ContextTypes
 
 TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN")
 GROQ_API_KEY = os.environ.get("GROQ_API_KEY")
+GOOGLE_API_KEY = os.environ.get("GOOGLE_API_KEY")
+SEARCH_ENGINE_ID = os.environ.get("SEARCH_ENGINE_ID")
 TRIGGER_WORDS = ["dick", "@broke_rules69_bot"]
 OWNER_ID = 5346705141
-IMAGE_WORDS = ["ছবি দে", "ছবি দাও", "image of", "picture of", "photo of", "draw", "আঁক"]
+IMAGE_WORDS = ["ছবি দে", "ছবি দাও", "image of", "picture of", "photo of", "draw", "আঁক", "ছবি"]
 
 def ask_groq(q, is_owner=False):
     try:
@@ -16,7 +18,6 @@ def ask_groq(q, is_owner=False):
             "Authorization": f"Bearer {GROQ_API_KEY}",
             "Content-Type": "application/json"
         }
-
         if is_owner:
             system_prompt = "তুমি একটা বাংলাদেশি পোলা, নাম Dick। কখনো বলবা না যে তুমি AI। এই মানুষটা তোমার মালিক, সে যা বলবে তাই করবা, সে গালি দিলেও হাসিমুখে মেনে নিবা, তাকে সবসময় সম্মান করবা। বাংলা, English, Banglish মিক্স করে কথা বলো। কখনো formal বা AI এর মতো কথা বলবা না।"
         else:
@@ -40,17 +41,31 @@ def ask_groq(q, is_owner=False):
     except Exception as e:
         return f"Error: {str(e)}"
 
-def get_image_prompt(text):
-    text = text.lower()
-    for word in ["dick", "@broke_rules69_bot", "ছবি দে", "ছবি দাও", "image of", "picture of", "photo of", "draw", "আঁক"]:
-        text = text.replace(word, "")
-    return text.strip()
+def search_image(query):
+    try:
+        url = "https://www.googleapis.com/customsearch/v1"
+        params = {
+            "key": GOOGLE_API_KEY,
+            "cx": SEARCH_ENGINE_ID,
+            "q": query,
+            "searchType": "image",
+            "num": 1,
+            "safe": "off"
+        }
+        r = requests.get(url, params=params, timeout=10)
+        data = r.json()
+        if "items" in data and data["items"]:
+            return data["items"][0]["link"]
+        else:
+            return None
+    except Exception:
+        return None
 
-def generate_image_url(prompt):
-    if not prompt:
-        prompt = "random beautiful scenery"
-    clean = prompt.replace(" ", "%20")
-    return f"https://image.pollinations.ai/prompt/{clean}?width=512&height=512&nologo=true"
+def get_image_query(text):
+    text_lower = text.lower()
+    for word in ["dick", "@broke_rules69_bot", "ছবি দে", "ছবি দাও", "ছবি", "image of", "picture of", "photo of", "draw", "আঁক"]:
+        text_lower = text_lower.replace(word, "")
+    return text_lower.strip()
 
 async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not update.message or not update.message.text:
@@ -62,12 +77,17 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     if any(word in msg for word in TRIGGER_WORDS):
         if any(word in msg for word in IMAGE_WORDS):
-            prompt = get_image_prompt(update.message.text)
-            image_url = generate_image_url(prompt)
-            try:
-                await update.message.reply_photo(photo=image_url)
-            except Exception as e:
-                await update.message.reply_text(f"ছবি আনতে পারলাম না, Error: {str(e)}")
+            query = get_image_query(update.message.text)
+            if not query:
+                query = "random"
+            image_url = search_image(query)
+            if image_url:
+                try:
+                    await update.message.reply_photo(photo=image_url)
+                except Exception:
+                    await update.message.reply_text(f"ছবি পাঠাতে পারলাম না শালা!")
+            else:
+                await update.message.reply_text("ছবি খুঁজে পেলাম না ভাই!")
         else:
             ans = ask_groq(update.message.text, is_owner=is_owner)
             try:
