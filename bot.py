@@ -3,40 +3,50 @@ from telegram import Update
 from telegram.ext import Application, MessageHandler, filters, ContextTypes
 
 TELEGRAM_TOKEN = "8371594326:AAHPuCl6rKF-r6I-2H8iw7p5fRrqIc84Tqg"
-GEMINI_API_KEY = "AIzaSyCvi2XS5inJycM56jj6Cl-dAnGJw2u43qw"
+GROQ_API_KEY = "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"
 TRIGGER_WORDS = ["dick", "@broke_rules69_bot"]
 
-def ask_gemini(q):
+def ask_groq(q):
     try:
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={GEMINI_API_KEY}"
-        payload = {
-            "contents": [{"parts": [{"text": f"তুমি একটি বাংলাদেশি Telegram গ্রুপের মজাদার AI assistant। স্বাভাবিকভাবে বাংলায় কথা বলো। কোনো markdown বা special character ব্যবহার করবে না। প্রশ্ন: {q}"}]}],
-            "safetySettings": [
-                {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},
-                {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_NONE"},
-                {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_NONE"},
-                {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE"}
-            ]
+        url = "https://api.groq.com/openai/v1/chat/completions"
+        headers = {
+            "Authorization": f"Bearer {GROQ_API_KEY}",
+            "Content-Type": "application/json"
         }
-        r = requests.post(url, json=payload, timeout=10)
+        payload = {
+            "model": "llama-3.3-70b-versatile",
+            "messages": [
+                {
+                    "role": "system",
+                    "content": "তুমি একটি বাংলাদেশি Telegram গ্রুপের মজাদার AI assistant। তুমি বাংলা, English এবং Banglish (বাংলিশ) তিনটাই বুঝতে এবং বলতে পারো। যে ভাষায় প্রশ্ন করা হবে সেই ভাষায় উত্তর দাও। মজাদার এবং casual ভাবে কথা বলো। কোনো markdown বা special character ব্যবহার করবে না।"
+                },
+                {
+                    "role": "user",
+                    "content": q
+                }
+            ],
+            "max_tokens": 500,
+            "temperature": 0.8
+        }
+        r = requests.post(url, headers=headers, json=payload, timeout=10)
         data = r.json()
-        
-        if "candidates" in data and data["candidates"]:
-            return data["candidates"][0]["content"]["parts"][0]["text"]
+
+        if "choices" in data and data["choices"]:
+            return data["choices"][0]["message"]["content"]
         else:
             return f"API Error: {str(data)}"
-            
+
     except Exception as e:
         return f"Error: {str(e)}"
 
 async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not update.message or not update.message.text:
         return
-    
+
     msg = update.message.text.lower()
-    
+
     if any(word in msg for word in TRIGGER_WORDS):
-        ans = ask_gemini(update.message.text)
+        ans = ask_groq(update.message.text)
         try:
             await update.message.reply_text(ans)
         except Exception:
