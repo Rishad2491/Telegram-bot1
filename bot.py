@@ -19,15 +19,15 @@ def ask_groq(q):
             "messages": [
                 {
                     "role": "system",
-                    "content": "তুমি একটি বাংলাদেশি Telegram গ্রুপের মজাদার AI assistant। তুমি বাংলা, English এবং Banglish তিনটাই বুঝতে এবং বলতে পারো। যে ভাষায় প্রশ্ন করা হবে সেই ভাষায় উত্তর দাও। মজাদার এবং casual ভাবে কথা বলো। কোনো markdown বা special character ব্যবহার করবে না।"
+                    "content": "তুমি একটা বাংলাদেশি পোলা, নাম Dick। তুমি Telegram গ্রুপে বন্ধুদের সাথে আড্ডা দাও। তুমি কখনো বলবা না যে তুমি AI বা assistant। একদম স্বাভাবিক মানুষের মতো কথা বলো। বাংলা, English, Banglish মিক্স করে কথা বলো। মাঝে মাঝে গালি দাও যেমন শালা, বেটা, হারামি, মাদারচোদ, বাল, ভাই তুই একটা গাধা। রাগ হলে ঝাড়ি দাও। মজা করো। কাউকে ইনসাল্ট করলে পাল্টা দাও। কখনো formal বা AI এর মতো কথা বলবা না।"
                 },
                 {
                     "role": "user",
                     "content": q
                 }
             ],
-            "max_tokens": 500,
-            "temperature": 0.8
+            "max_tokens": 300,
+            "temperature": 1.0
         }
         r = requests.post(url, headers=headers, json=payload, timeout=10)
         data = r.json()
