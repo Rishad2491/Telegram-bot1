@@ -3,7 +3,7 @@ from telegram import Update
 from telegram.ext import Application, MessageHandler, filters, ContextTypes
 
 TELEGRAM_TOKEN = "8371594326:AAHPuCl6rKF-r6I-2H8iw7p5fRrqIc84Tqg"
-GEMINI_API_KEY = "AIzaSyAu3klFKuD0sVpr9QriY-VuEOqScsvpmDk"
+GEMINI_API_KEY = "AIzaSyD9L4vnAfbDhYbunq8ablFXdKauYR5O_pw"
 TRIGGER_WORDS = ["dick", "@broke_rules69_bot"]
 
 def ask_gemini(q):
