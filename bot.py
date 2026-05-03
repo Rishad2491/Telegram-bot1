@@ -8,7 +8,7 @@ TRIGGER_WORDS = ["dick", "@broke_rules69_bot"]
 
 def ask_gemini(q):
     try:
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={GEMINI_API_KEY}"
         payload = {
             "contents": [{"parts": [{"text": f"তুমি একটি বাংলাদেশি Telegram গ্রুপের মজাদার AI assistant। স্বাভাবিকভাবে বাংলায় কথা বলো। কোনো markdown বা special character ব্যবহার করবে না। প্রশ্ন: {q}"}]}],
             "safetySettings": [
