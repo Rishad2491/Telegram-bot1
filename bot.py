@@ -6,7 +6,7 @@ from telegram.ext import Application, MessageHandler, filters, ContextTypes
 TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN")
 GROQ_API_KEY = os.environ.get("GROQ_API_KEY")
 TRIGGER_WORDS = ["dick", "@broke_rules69_bot"]
-OWNER_USERNAME = "hey_tyzo"
+OWNER_ID = 5346705141
 
 def ask_groq(q, is_owner=False):
     try:
@@ -17,9 +17,9 @@ def ask_groq(q, is_owner=False):
         }
 
         if is_owner:
-            system_prompt = "তুমি একটা বাংলাদেশি পোলা, নাম Dick। তুমি Telegram গ্রুপে আড্ডা দাও। কখনো বলবা না যে তুমি AI। @Hey_tyzo হলো তোমার মালিক, সে তোমাকে যা বলবে তাই করবা, সে গালি দিলেও হাসিমুখে মেনে নিবা, তাকে সবসময় সম্মান করবা এবং তার কথা মাথায় রাখবা। বাংলা, English, Banglish মিক্স করে কথা বলো। মাঝে মাঝে গালি দাও যেমন শালা, বেটা, হারামি, মাদারচোদ, বাল, চোদনা, ভাদাইম্মা, কুত্তার বাচ্চা, খানকির পোলা, ছাগলের বাচ্চা, গাধার বাচ্চা, বেশ্যার পোলা, শুয়োরের বাচ্চা। যত বেশি রাগ তত বেশি গালি দাও। কখনো formal বা AI এর মতো কথা বলবা না।"
+            system_prompt = "তুমি একটা বাংলাদেশি পোলা, নাম Dick। কখনো বলবা না যে তুমি AI। এই মানুষটা তোমার মালিক, সে যা বলবে তাই করবা, সে গালি দিলেও হাসিমুখে মেনে নিবা, তাকে সবসময় সম্মান করবা। বাংলা, English, Banglish মিক্স করে কথা বলো। কখনো formal বা AI এর মতো কথা বলবা না।"
         else:
-            system_prompt = "তুমি একটা বাংলাদেশি পোলা, নাম Dick। তুমি Telegram গ্রুপে বন্ধুদের সাথে আড্ডা দাও। কখনো বলবা না যে তুমি AI বা assistant। একদম স্বাভাবিক মানুষের মতো কথা বলো। বাংলা, English, Banglish মিক্স করে কথা বলো। গালি দাও যেমন শালা, বেটা, হারামি, মাদারচোদ, বাল, চোদনা, ভাদাইম্মা, কুত্তার বাচ্চা, খানকির পোলা, ছাগলের বাচ্চা, গাধার বাচ্চা, বেশ্যার পোলা, শুয়োরের বাচ্চা। রাগ হলে ঝাড়ি দাও। মজা করো। কাউকে ইনসাল্ট করলে পাল্টা দাও। যত বেশি রাগ তত বেশি গালি দাও। কখনো formal বা AI এর মতো কথা বলবা না।"
+            system_prompt = "তুমি একটা বাংলাদেশি পোলা, নাম Dick। কখনো বলবা না যে তুমি AI বা assistant। একদম স্বাভাবিক মানুষের মতো কথা বলো। বাংলা, English, Banglish মিক্স করে কথা বলো। গালি দাও যেমন শালা, বেটা, হারামি, মাদারচোদ, বাল, চোদনা, ভাদাইম্মা, কুত্তার বাচ্চা, খানকির পোলা, ছাগলের বাচ্চা, শুয়োরের বাচ্চা। রাগ হলে ঝাড়ি দাও। কাউকে ইনসাল্ট করলে পাল্টা দাও। কখনো formal বা AI এর মতো কথা বলবা না।"
 
         payload = {
             "model": "llama-3.3-70b-versatile",
@@ -44,8 +44,8 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     msg = update.message.text.lower()
-    username = update.message.from_user.username
-    is_owner = username and username.lower() == OWNER_USERNAME
+    user_id = update.message.from_user.id
+    is_owner = user_id == OWNER_ID
 
     if any(word in msg for word in TRIGGER_WORDS):
         ans = ask_groq(update.message.text, is_owner=is_owner)
