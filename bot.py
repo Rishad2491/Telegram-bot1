@@ -149,9 +149,24 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
     original = update.message.text
     user_id = update.message.from_user.id
     is_owner = user_id == OWNER_ID
+    chat_type = update.message.chat.type
 
-    if not any(word in msg for word in TRIGGER_WORDS):
+    # Private chat — সব message এ reply দেবে
+    if chat_type == "private":
+        should_respond = True
+    # Group chat — শুধু trigger word থাকলে reply দেবে
+    else:
+        should_respond = any(word in msg for word in TRIGGER_WORDS)
+
+    if not should_respond:
         return
+
+    # Private chat এ trigger word ছাড়াও কাজ করবে
+    # তাই query থেকে trigger word remove করবো শুধু group এর জন্য
+    if chat_type != "private":
+        query_text = original
+    else:
+        query_text = original
 
     if any(word in msg for word in IMAGE_WORDS):
         query = get_image_query(original)
@@ -177,7 +192,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(translate_text(text))
 
     else:
-        ans = ask_groq(original, user_id, is_owner=is_owner)
+        ans = ask_groq(query_text, user_id, is_owner=is_owner)
         try:
             await update.message.reply_text(ans)
         except Exception:
