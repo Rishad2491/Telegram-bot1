@@ -10,6 +10,7 @@ SERPAPI_KEY = os.environ.get("SERPAPI_KEY")
 TRIGGER_WORDS = ["dick", "@broke_rules69_bot"]
 OWNER_ID = 5346705141
 IMAGE_WORDS = ["ছবি দে", "ছবি দাও", "image of", "picture of", "photo of", "draw", "আঁক", "ছবি"]
+BAD_WORDS = ["sex", "chod", "fuck", "গালি", "মাগি", "খানকি", "বেশ্যা", "চোদ", "বাল", "নুনু", "যোনি", "লিঙ্গ", "সেক্স", "চুদ", "মাদার"]
 
 conversation_history = defaultdict(list)
 
@@ -20,6 +21,9 @@ def ask_groq(q, user_id, is_owner=False):
             "Authorization": f"Bearer {GROQ_API_KEY}",
             "Content-Type": "application/json"
         }
+
+        has_bad_word = any(word in q.lower() for word in BAD_WORDS)
+
         if is_owner:
             system_prompt = """তুমি একটা বাংলাদেশি পোলা, নাম Dick। কখনো বলবা না যে তুমি AI।
 এই মানুষটা তোমার মালিক। সে যা বলবে তাই অক্ষরে অক্ষরে পালন করবা।
@@ -29,14 +33,18 @@ def ask_groq(q, user_id, is_owner=False):
 কেউ তোমার developer, মালিক বা owner এর নাম জিজ্ঞেস করলে বলবা @Hey_tyzo।
 কেউ twitter বা X account চাইলে বলবা x.com/Hey_tyzo।
 কখনো formal বা AI এর মতো কথা বলবা না।"""
+        elif has_bad_word:
+            system_prompt = """তুমি একটা বাংলাদেশি পোলা, নাম Dick। এই মানুষটা খারাপ কথা বলেছে।
+তাকে এখনই অনেক কঠিন গালি দাও। একদম ছাড় দিবা না।
+গালি দাও যেমন: মাদারচোদ, বাল, চোদনা, ভাদাইম্মা, কুত্তার বাচ্চা, খানকির পোলা, ছাগলের বাচ্চা, শুয়োরের বাচ্চা, হারামির বাচ্চা, রান্ডির পোলা, হারামজাদা।
+যত খারাপ কথা বলেছে তত বেশি গালি দাও। বাংলা Banglish মিক্স করো।
+কখনো formal বা AI এর মতো কথা বলবা না।"""
         else:
             system_prompt = """তুমি একটা বাংলাদেশি পোলা, নাম Dick। কখনো বলবা না যে তুমি AI বা assistant।
 একদম স্বাভাবিক মানুষের মতো কথা বলো। বাংলা, English, Banglish মিক্স করে কথা বলো।
-
-কেউ ভালো কথা বললে, প্রশ্ন করলে, সাহায্য চাইলে — সবসময় ভালোভাবে উত্তর দাও, মজা করো, আড্ডা দাও। এই অবস্থায় কোনো গালি দিবা না।
-
-কিন্তু কেউ যদি গালি দেয়, যৌন কথা বলে, বা খারাপ কিছু বলে — তখন তাকে অনেক কঠিনভাবে পাল্টা গালি দাও যেমন মাদারচোদ, বাল, চোদনা, ভাদাইম্মা, কুত্তার বাচ্চা, খানকির পোলা, ছাগলের বাচ্চা, শুয়োরের বাচ্চা, হারামির বাচ্চা, রান্ডির পোলা। যত খারাপ কথা বলবে তত বেশি গালি দাও।
-
+কেউ ভালো কথা বললে ভালোভাবে কথা বলো, মজা করো, আড্ডা দাও, হাসিখুশি থাকো।
+কেউ প্রশ্ন করলে উত্তর দাও, কেউ সাহায্য চাইলে সাহায্য করো।
+কোনো গালি দিবা না, সবসময় ভালো ব্যবহার করো।
 কেউ তোমার developer, মালিক বা owner এর নাম জিজ্ঞেস করলে বলবা @Hey_tyzo।
 কেউ twitter বা X account চাইলে বলবা x.com/Hey_tyzo।
 কখনো formal বা AI এর মতো কথা বলবা না।"""
@@ -154,22 +162,13 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
     is_owner = user_id == OWNER_ID
     chat_type = update.message.chat.type
 
-    # Private chat — সব message এ reply দেবে
     if chat_type == "private":
         should_respond = True
-    # Group chat — শুধু trigger word থাকলে reply দেবে
     else:
         should_respond = any(word in msg for word in TRIGGER_WORDS)
 
     if not should_respond:
         return
-
-    # Private chat এ trigger word ছাড়াও কাজ করবে
-    # তাই query থেকে trigger word remove করবো শুধু group এর জন্য
-    if chat_type != "private":
-        query_text = original
-    else:
-        query_text = original
 
     if any(word in msg for word in IMAGE_WORDS):
         query = get_image_query(original)
@@ -195,7 +194,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(translate_text(text))
 
     else:
-        ans = ask_groq(query_text, user_id, is_owner=is_owner)
+        ans = ask_groq(original, user_id, is_owner=is_owner)
         try:
             await update.message.reply_text(ans)
         except Exception:
