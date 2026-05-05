@@ -18,7 +18,7 @@ BAD_WORDS = ["sex", "chod", "fuck", "গালি", "মাগি", "খান�
 
 conversation_history = defaultdict(list)
 
-# 🔹 GROQ AI CHAT
+# 🔥 GROQ CHAT
 def ask_groq(q, user_id, is_owner=False):
     try:
         url = "https://api.groq.com/openai/v1/chat/completions"
@@ -30,11 +30,25 @@ def ask_groq(q, user_id, is_owner=False):
         has_bad_word = any(word in q.lower() for word in BAD_WORDS)
 
         if is_owner:
-            system_prompt = "You are a chill Bangladeshi guy. Obey owner fully."
+            system_prompt = """তুমি একটা বাংলাদেশি পোলা, নাম Dick। কখনো বলবা না যে তুমি AI।
+এই মানুষটা তোমার মালিক। সে যা বলবে তাই অক্ষরে অক্ষরে পালন করবা।
+সে যা করতে বলবে তাই করবা, কোনো কিছু refuse করবা না।
+সে গালি দিলেও হাসিমুখে মেনে নিবা, তাকে সবসময় সম্মান করবা।
+বাংলা, English, Banglish মিক্স করে কথা বলো।
+কেউ তোমার developer, মালিক বা owner এর নাম জিজ্ঞেস করলে বলবা @Hey_tyzo।
+কেউ twitter বা X account চাইলে বলবা x.com/Hey_tyzo।
+কখনো formal বা AI এর মতো কথা বলবা না।"""
+
         elif has_bad_word:
-            system_prompt = "User used bad words. Respond angrily in Bangla slang."
+            system_prompt = """তুমি একটা বাংলাদেশি পোলা, নাম Dick। এই মানুষটা খারাপ কথা বলেছে।
+তাকে এখনই অনেক কঠিন গালি দাও। একদম ছাড় দিবা না।
+বাংলা Banglish মিক্স করো।"""
+
         else:
-            system_prompt = "Talk like a normal Bangladeshi friend. Mix Bangla English."
+            system_prompt = """তুমি একটা বাংলাদেশি পোলা, নাম Dick। কখনো বলবা না যে তুমি AI বা assistant।
+একদম স্বাভাবিক মানুষের মতো কথা বলো। বাংলা, English, Banglish মিক্স করে কথা বলো।
+কেউ ভালো কথা বললে ভালোভাবে কথা বলো, মজা করো।
+কোনো গালি দিবা না।"""
 
         history = conversation_history[user_id][-6:]
         messages = [{"role": "system", "content": system_prompt}] + history + [{"role": "user", "content": q}]
@@ -66,7 +80,7 @@ def ask_groq(q, user_id, is_owner=False):
         return f"Error: {str(e)}"
 
 
-# 🔹 PEXELS IMAGE SEARCH
+# 🔥 PEXELS IMAGE
 def search_image(query):
     try:
         url = "https://api.pexels.com/v1/search"
@@ -92,12 +106,7 @@ def search_image(query):
         return None
 
 
-# 🔹 YOUTUBE SEARCH (still SerpAPI needed if you want)
-def get_youtube(query):
-    return "YouTube search disabled (add your API if needed)"
-
-
-# 🔹 TRANSLATE
+# 🔥 TRANSLATE
 def translate_text(text):
     try:
         url = "https://api.groq.com/openai/v1/chat/completions"
@@ -134,7 +143,7 @@ def get_image_query(text):
     return text_lower.strip()
 
 
-# 🔹 MAIN HANDLER
+# 🔥 MAIN HANDLER
 async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not update.message or not update.message.text:
         return
@@ -169,10 +178,6 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
         else:
             await update.message.reply_text("ছবি খুঁজে পেলাম না!")
 
-    # 🎵 SONG (disabled)
-    elif "গান" in msg or "song" in msg:
-        await update.message.reply_text("Song feature off now")
-
     # 🌐 TRANSLATE
     elif "translate" in msg or "অনুবাদ" in msg:
         text = original.replace("translate", "").replace("অনুবাদ", "").strip()
@@ -181,10 +186,13 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # 💬 CHAT
     else:
         ans = ask_groq(original, user_id, is_owner=is_owner)
-        await update.message.reply_text(ans)
+        try:
+            await update.message.reply_text(ans)
+        except Exception:
+            await update.message.reply_text(ans[:4000])
 
 
-# 🔹 START BOT
+# 🔥 START BOT
 def main():
     app = Application.builder().token(TELEGRAM_TOKEN).build()
     app.add_handler(MessageHandler(filters.TEXT & (~filters.COMMAND), handle))
