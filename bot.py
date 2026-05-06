@@ -6,8 +6,7 @@ from collections import defaultdict
 
 TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN")
 GROQ_API_KEY = os.environ.get("GROQ_API_KEY")
-GOOGLE_API_KEY = os.environ.get("GOOGLE_API_KEY")
-SEARCH_ENGINE_ID = os.environ.get("SEARCH_ENGINE_ID")
+SERPAPI_KEY = os.environ.get("SERPAPI_KEY")
 TRIGGER_WORDS = ["dick", "@broke_rules69_bot"]
 OWNER_ID = 5346705141
 IMAGE_WORDS = ["ছবি দে", "ছবি দাও", "image of", "picture of", "photo of", "draw", "আঁক", "ছবি"]
@@ -75,33 +74,33 @@ def ask_groq(q, user_id, is_owner=False):
 
 def search_image(query):
     try:
-        url = "https://www.googleapis.com/customsearch/v1"
+        url = "https://serpapi.com/search"
         params = {
-            "key": GOOGLE_API_KEY,
-            "cx": SEARCH_ENGINE_ID,
+            "engine": "google_images",
             "q": query,
-            "searchType": "image",
-            "num": 5,
-            "safe": "off",
-            "gl": "us",
-            "cr": "countryUS",
-            "filter": "0"
+            "api_key": SERPAPI_KEY,
+            "num": 10,
+            "safe": "off"
         }
-        r = requests.get(url, params=params, timeout=10)
+        r = requests.get(url, params=params, timeout=15)
         data = r.json()
-        if "items" in data and data["items"]:
-            for item in data["items"]:
-                img_url = item.get("link", "")
-                if img_url and img_url.startswith("http") and not img_url.endswith(".gif"):
+        if "images_results" in data and data["images_results"]:
+            for item in data["images_results"]:
+                img_url = item.get("original", "")
+                width = item.get("original_width", 0)
+                height = item.get("original_height", 0)
+                if (img_url and img_url.startswith("http") and
+                        not img_url.endswith(".gif") and
+                        width >= 200 and height >= 200):
                     try:
                         head = requests.head(img_url, timeout=5, allow_redirects=True)
                         if "image" in head.headers.get("content-type", "") and head.status_code == 200:
                             return img_url
                     except Exception:
                         continue
-        return f"ERROR: {str(data)}"
-    except Exception as e:
-        return f"ERROR: {str(e)}"
+        return None
+    except Exception:
+        return None
 
 def translate_text(text):
     try:
@@ -155,13 +154,13 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if not query:
             query = "random"
         result = search_image(query)
-        if result and not result.startswith("ERROR"):
+        if result:
             try:
                 await update.message.reply_photo(photo=result)
-            except Exception as e:
-                await update.message.reply_text(f"ছবি পাঠাতে পারলাম না: {str(e)}")
+            except Exception:
+                await update.message.reply_text("ছবি পাঠাতে পারলাম না শালা!")
         else:
-            await update.message.reply_text(f"সমস্যা: {result}")
+            await update.message.reply_text("ছবি খুঁজে পেলাম না ভাই!")
 
     elif "translate" in msg or "অনুবাদ" in msg:
         text = original.replace("dick", "").replace("translate", "").replace("অনুবাদ", "").replace("@broke_rules69_bot", "").strip()
