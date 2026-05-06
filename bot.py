@@ -83,7 +83,9 @@ def search_image(query):
             "searchType": "image",
             "num": 5,
             "safe": "off",
-            "gl": "us"
+            "gl": "us",
+            "cr": "countryUS",
+            "filter": "0"
         }
         r = requests.get(url, params=params, timeout=10)
         data = r.json()
