@@ -100,6 +100,7 @@ def search_image(query):
         return f"ERROR: {str(data)}"
     except Exception as e:
         return f"ERROR: {str(e)}"
+
 def translate_text(text):
     try:
         url = "https://api.groq.com/openai/v1/chat/completions"
@@ -152,13 +153,13 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if not query:
             query = "random"
         result = search_image(query)
-        if result:
+        if result and not result.startswith("ERROR"):
             try:
                 await update.message.reply_photo(photo=result)
-            except Exception:
-                await update.message.reply_text("ছবি পাঠাতে পারলাম না শালা!")
+            except Exception as e:
+                await update.message.reply_text(f"ছবি পাঠাতে পারলাম না: {str(e)}")
         else:
-            await update.message.reply_text("ছবি খুঁজে পেলাম না ভাই!")
+            await update.message.reply_text(f"সমস্যা: {result}")
 
     elif "translate" in msg or "অনুবাদ" in msg:
         text = original.replace("dick", "").replace("translate", "").replace("অনুবাদ", "").replace("@broke_rules69_bot", "").strip()
