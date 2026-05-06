@@ -97,10 +97,9 @@ def search_image(query):
                             return img_url
                     except Exception:
                         continue
-        return None
-    except Exception:
-        return None
-
+        return f"ERROR: {str(data)}"
+    except Exception as e:
+        return f"ERROR: {str(e)}"
 def translate_text(text):
     try:
         url = "https://api.groq.com/openai/v1/chat/completions"
