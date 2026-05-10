@@ -5,7 +5,7 @@ from telegram.ext import Application, MessageHandler, filters, ContextTypes
 from collections import defaultdict
 
 TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN")
-GROQ_API_KEY = os.environ.get("GROQ_API_KEY")
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 SERPAPI_KEY = os.environ.get("SERPAPI_KEY")
 TRIGGER_WORDS = ["dick", "@broke_rules69_bot"]
 OWNER_ID = 5346705141
@@ -14,14 +14,8 @@ BAD_WORDS = ["sex", "chod", "fuck", "গালি", "মাগি", "খান�
 
 conversation_history = defaultdict(list)
 
-def ask_groq(q, user_id, is_owner=False):
+def ask_gemini(q, user_id, is_owner=False):
     try:
-        url = "https://api.groq.com/openai/v1/chat/completions"
-        headers = {
-            "Authorization": f"Bearer {GROQ_API_KEY}",
-            "Content-Type": "application/json"
-        }
-
         has_bad_word = any(word in q.lower() for word in BAD_WORDS)
 
         if is_owner:
@@ -32,13 +26,13 @@ def ask_groq(q, user_id, is_owner=False):
 বাংলা, English, Banglish মিক্স করে কথা বলো।
 কেউ তোমার developer, মালিক বা owner এর নাম জিজ্ঞেস করলে বলবা @Hey_tyzo।
 কেউ twitter বা X account চাইলে বলবা x.com/Hey_tyzo।
-কখনো formal বা AI এর মতো কথা বলবা না।"""
+কখনো markdown বা special character ব্যবহার করবা না।"""
         elif has_bad_word:
             system_prompt = """তুমি একটা বাংলাদেশি পোলা, নাম Dick। এই মানুষটা খারাপ কথা বলেছে।
 তাকে এখনই অনেক কঠিন গালি দাও। একদম ছাড় দিবা না।
 গালি দাও যেমন: মাদারচোদ, বাল, চোদনা, ভাদাইম্মা, কুত্তার বাচ্চা, খানকির পোলা, ছাগলের বাচ্চা, শুয়োরের বাচ্চা, হারামির বাচ্চা, রান্ডির পোলা।
 যত খারাপ কথা বলেছে তত বেশি গালি দাও। বাংলা Banglish মিক্স করো।
-কখনো formal বা AI এর মতো কথা বলবা না।"""
+কখনো markdown বা special character ব্যবহার করবা না।"""
         else:
             system_prompt = """তুমি একটা বাংলাদেশি পোলা, নাম Dick। কখনো বলবা না যে তুমি AI বা assistant।
 একদম স্বাভাবিক মানুষের মতো কথা বলো। বাংলা, English, Banglish মিক্স করে কথা বলো।
@@ -47,21 +41,33 @@ def ask_groq(q, user_id, is_owner=False):
 কোনো গালি দিবা না, সবসময় ভালো ব্যবহার করো।
 কেউ তোমার developer, মালিক বা owner এর নাম জিজ্ঞেস করলে বলবা @Hey_tyzo।
 কেউ twitter বা X account চাইলে বলবা x.com/Hey_tyzo।
-কখনো formal বা AI এর মতো কথা বলবা না।"""
+কখনো markdown বা special character ব্যবহার করবা না।"""
 
         history = conversation_history[user_id][-6:]
-        messages = [{"role": "system", "content": system_prompt}] + history + [{"role": "user", "content": q}]
+        
+        contents = []
+        for h in history:
+            role = "user" if h["role"] == "user" else "model"
+            contents.append({"role": role, "parts": [{"text": h["content"]}]})
+        
+        contents.append({"role": "user", "parts": [{"text": f"{system_prompt}\n\nUser: {q}"}]})
 
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={GEMINI_API_KEY}"
         payload = {
-            "model": "llama-3.3-70b-versatile",
-            "messages": messages,
-            "max_tokens": 500,
-            "temperature": 1.0
+            "contents": contents,
+            "safetySettings": [
+                {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},
+                {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_NONE"},
+                {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_NONE"},
+                {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE"}
+            ]
         }
-        r = requests.post(url, headers=headers, json=payload, timeout=10)
+
+        r = requests.post(url, json=payload, timeout=15)
         data = r.json()
-        if "choices" in data and data["choices"]:
-            reply = data["choices"][0]["message"]["content"]
+
+        if "candidates" in data and data["candidates"]:
+            reply = data["candidates"][0]["content"]["parts"][0]["text"]
             conversation_history[user_id].append({"role": "user", "content": q})
             conversation_history[user_id].append({"role": "assistant", "content": reply})
             if len(conversation_history[user_id]) > 20:
@@ -104,23 +110,14 @@ def search_image(query):
 
 def translate_text(text):
     try:
-        url = "https://api.groq.com/openai/v1/chat/completions"
-        headers = {
-            "Authorization": f"Bearer {GROQ_API_KEY}",
-            "Content-Type": "application/json"
-        }
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={GEMINI_API_KEY}"
         payload = {
-            "model": "llama-3.3-70b-versatile",
-            "messages": [
-                {"role": "system", "content": "তুমি একজন translator। যে text দেওয়া হবে সেটা বাংলা হলে English এ, English হলে বাংলায় translate করো। শুধু translation দাও, অন্য কিছু না।"},
-                {"role": "user", "content": text}
-            ],
-            "max_tokens": 500
+            "contents": [{"parts": [{"text": f"Translate this text. If Bengali translate to English, if English translate to Bengali. Only give translation, nothing else: {text}"}]}]
         }
-        r = requests.post(url, headers=headers, json=payload, timeout=10)
+        r = requests.post(url, json=payload, timeout=10)
         data = r.json()
-        if "choices" in data and data["choices"]:
-            return data["choices"][0]["message"]["content"]
+        if "candidates" in data and data["candidates"]:
+            return data["candidates"][0]["content"]["parts"][0]["text"]
         return "Translate করতে পারলাম না!"
     except Exception as e:
         return f"Error: {str(e)}"
@@ -167,7 +164,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(translate_text(text))
 
     else:
-        ans = ask_groq(original, user_id, is_owner=is_owner)
+        ans = ask_gemini(original, user_id, is_owner=is_owner)
         try:
             await update.message.reply_text(ans)
         except Exception:
