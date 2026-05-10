@@ -5,7 +5,7 @@ from telegram.ext import Application, MessageHandler, filters, ContextTypes
 from collections import defaultdict
 
 TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN")
-GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
+GROQ_API_KEY = os.environ.get("GROQ_API_KEY")
 SERPAPI_KEY = os.environ.get("SERPAPI_KEY")
 TRIGGER_WORDS = ["dick", "@broke_rules69_bot"]
 OWNER_ID = 5346705141
@@ -14,8 +14,14 @@ BAD_WORDS = ["sex", "chod", "fuck", "গালি", "মাগি", "খান�
 
 conversation_history = defaultdict(list)
 
-def ask_gemini(q, user_id, is_owner=False):
+def ask_groq(q, user_id, is_owner=False):
     try:
+        url = "https://api.groq.com/openai/v1/chat/completions"
+        headers = {
+            "Authorization": f"Bearer {GROQ_API_KEY}",
+            "Content-Type": "application/json"
+        }
+
         has_bad_word = any(word in q.lower() for word in BAD_WORDS)
 
         if is_owner:
@@ -44,30 +50,18 @@ def ask_gemini(q, user_id, is_owner=False):
 কখনো markdown বা special character ব্যবহার করবা না।"""
 
         history = conversation_history[user_id][-6:]
-        
-        contents = []
-        for h in history:
-            role = "user" if h["role"] == "user" else "model"
-            contents.append({"role": role, "parts": [{"text": h["content"]}]})
-        
-        contents.append({"role": "user", "parts": [{"text": f"{system_prompt}\n\nUser: {q}"}]})
+        messages = [{"role": "system", "content": system_prompt}] + history + [{"role": "user", "content": q}]
 
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={GEMINI_API_KEY}"
         payload = {
-            "contents": contents,
-            "safetySettings": [
-                {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},
-                {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_NONE"},
-                {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_NONE"},
-                {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE"}
-            ]
+            "model": "mixtral-8x7b-32768",
+            "messages": messages,
+            "max_tokens": 500,
+            "temperature": 1.0
         }
-
-        r = requests.post(url, json=payload, timeout=15)
+        r = requests.post(url, headers=headers, json=payload, timeout=10)
         data = r.json()
-
-        if "candidates" in data and data["candidates"]:
-            reply = data["candidates"][0]["content"]["parts"][0]["text"]
+        if "choices" in data and data["choices"]:
+            reply = data["choices"][0]["message"]["content"]
             conversation_history[user_id].append({"role": "user", "content": q})
             conversation_history[user_id].append({"role": "assistant", "content": reply})
             if len(conversation_history[user_id]) > 20:
@@ -110,14 +104,23 @@ def search_image(query):
 
 def translate_text(text):
     try:
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={GEMINI_API_KEY}"
-        payload = {
-            "contents": [{"parts": [{"text": f"Translate this text. If Bengali translate to English, if English translate to Bengali. Only give translation, nothing else: {text}"}]}]
+        url = "https://api.groq.com/openai/v1/chat/completions"
+        headers = {
+            "Authorization": f"Bearer {GROQ_API_KEY}",
+            "Content-Type": "application/json"
         }
-        r = requests.post(url, json=payload, timeout=10)
+        payload = {
+            "model": "mixtral-8x7b-32768",
+            "messages": [
+                {"role": "system", "content": "তুমি একজন translator। যে text দেওয়া হবে সেটা বাংলা হলে English এ, English হলে বাংলায় translate করো। শুধু translation দাও, অন্য কিছু না।"},
+                {"role": "user", "content": text}
+            ],
+            "max_tokens": 500
+        }
+        r = requests.post(url, headers=headers, json=payload, timeout=10)
         data = r.json()
-        if "candidates" in data and data["candidates"]:
-            return data["candidates"][0]["content"]["parts"][0]["text"]
+        if "choices" in data and data["choices"]:
+            return data["choices"][0]["message"]["content"]
         return "Translate করতে পারলাম না!"
     except Exception as e:
         return f"Error: {str(e)}"
@@ -164,7 +167,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(translate_text(text))
 
     else:
-        ans = ask_gemini(original, user_id, is_owner=is_owner)
+        ans = ask_groq(original, user_id, is_owner=is_owner)
         try:
             await update.message.reply_text(ans)
         except Exception:
